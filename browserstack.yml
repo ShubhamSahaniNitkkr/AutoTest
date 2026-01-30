@@ -1,0 +1,41 @@
+userName: ${BROWSERSTACK_USERNAME}
+accessKey: ${BROWSERSTACK_ACCESS_KEY}
+
+framework: playwright
+
+platforms:
+  # ---------- DESKTOP ----------
+  - os: Windows
+    osVersion: 11
+    browserName: chrome
+    browserVersion: latest
+
+  - os: Windows
+    osVersion: 11
+    browserName: playwright-firefox
+    browserVersion: latest
+
+  - os: OS X
+    osVersion: Ventura
+    browserName: playwright-webkit
+
+  # ---------- REAL iOS ----------
+  - deviceName: iPhone 14
+    osVersion: 16
+    browserName: playwright-webkit
+    realMobile: true
+
+  # ---------- REAL ANDROID ----------
+  - deviceName: Google Pixel 7
+    osVersion: 13
+    browserName: chrome
+    realMobile: true
+
+parallelsPerPlatform: 1
+
+buildName: BlueAI Playwright Build
+projectName: BlueAI Automation
+
+debug: true
+networkLogs: true
+consoleLogs: info

@@ -1,0 +1,20 @@
+{
+  "name": "blue-ai-test",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "playwright test tests/auto",
+    "test:auto": "playwright test tests/auto --headed",
+    "test:debug": "playwright test tests/auto --debug",
+    "test:manual": "playwright test --config=playwright.config.manual.js --headed --workers=1",
+    "test:auto:browserstack": "browserstack-node-sdk playwright test",
+    "postinstall": "playwright install --with-deps",
+    "test:file": "playwright test --headed"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.57.0",
+    "browserstack-node-sdk": "^1.47.2",
+    "dotenv": "^17.2.3"
+  }
+}
