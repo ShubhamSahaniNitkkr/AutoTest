@@ -8,11 +8,16 @@ const config = {
     workers: 1,
 
     use: {
-        baseURL: 'https://demo.smartblue.ai',
+        headless: false,
+        baseURL: process.env.BASE_URL,
+        trace: "on-first-retry",
+        screenshot: "only-on-failure",
+        video: "retain-on-failure",
         actionTimeout: 30000,
         navigationTimeout: 60000,
         trace: 'off'
-    }
+    },
+    reporter: [["html", { open: "never" }]],
 };
 
 export default config;
