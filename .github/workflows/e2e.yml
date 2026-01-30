@@ -1,0 +1,93 @@
+name: Playwright E2E (Triggered)
+
+on:
+  repository_dispatch:
+    types: [run-e2e]
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Print Trigger Payload
+        run: |
+          echo "Env: ${{ github.event.client_payload.env }}"
+          echo "BaseURL: ${{ github.event.client_payload.baseUrl }}"
+          echo "SHA: ${{ github.event.client_payload.sha }}"
+
+      - name: Checkout Playwright Repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
+
+      - name: Run Playwright Tests
+        env:
+          BASE_URL: ${{ github.event.client_payload.baseUrl }}
+        run: npx playwright test
+
+      - name: Upload Playwright Report (Always)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report
+          retention-days: 7
+
+      - name: Prepare Email Status
+        if: always()
+        id: status
+        run: |
+          if [ "${{ job.status }}" = "success" ]; then
+            echo "result=PASS" >> $GITHUB_OUTPUT
+          else
+            echo "result=FAIL" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Send Email (Always)
+        if: always()
+        uses: dawidd6/action-send-mail@v4
+        with:
+          server_address: smtp.gmail.com
+          server_port: 587
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          subject: "E2E Report - ${{ steps.status.outputs.result }} - ${{ github.event.client_payload.env }}"
+          to: ${{ vars.EMAIL_TO }}
+          from: ${{ vars.EMAIL_FROM }}
+          body: |
+            E2E test execution completed.
+
+            Result: ${{ steps.status.outputs.result }}
+            Environment: ${{ github.event.client_payload.env }}
+            Base URL: ${{ github.event.client_payload.baseUrl }}
+            Commit SHA: ${{ github.event.client_payload.sha }}
+
+            Workflow Run:
+            https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+            Report:
+            Open the workflow run -> Artifacts -> playwright-report
+
+      - name: Trigger Rollback in Main Repo (Only if FAIL)
+        if: failure()
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.REPO_DISPATCH_TOKEN }}
+          repository: ${{ vars.MAIN_REPO }}
+          event-type: rollback-prod
+          client-payload: |
+            {
+              "env": "${{ github.event.client_payload.env }}",
+              "baseUrl": "${{ github.event.client_payload.baseUrl }}",
+              "sha": "${{ github.event.client_payload.sha }}",
+              "e2eRunUrl": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            }
